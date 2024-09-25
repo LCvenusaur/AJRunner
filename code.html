@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AJ Runner</title>
+    <style>
+        canvas {
+            background: url('sky.png');
+            display: block;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="600" height="400"></canvas>
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        // Load images
+        const playerImg = new Image();
+        playerImg.src = "AJbody.png";
+
+        const hurdleImg = new Image();
+        hurdleImg.src = "hurdle.png";
+
+        // Game variables
+        const player = { x: 80, y: 350, width: 116, height: 120, speed: 10 };
+        const hurdles = [];
+        const hurdleSpeed = 5;
+        let elapsedTime = 0;
+        let lastHurdleTime = 0;
+
+        // Handle player movement
+        let keys = {};
+        window.addEventListener("keydown", (e) => keys[e.key] = true);
+        window.addEventListener("keyup", (e) => keys[e.key] = false);
+
+        function update() {
+            // Move player
+            if (keys["ArrowLeft"] && player.x - player.speed >= 0) player.x -= player.speed;
+            if (keys["ArrowRight"] && player.x + player.speed + player.width <= canvas.width) player.x += player.speed;
+            if (keys["ArrowUp"] && player.y - player.speed >= 0) player.y -= player.speed;
+            if (keys["ArrowDown"] && player.y + player.speed + player.height <= canvas.height) player.y += player.speed;
+
+            // Add new hurdles
+            const currentTime = Date.now();
+            if (currentTime - lastHurdleTime > 2000) {
+                const hurdleX = Math.random() * (canvas.width - 80);
+                hurdles.push({ x: hurdleX, y: -50, width: 80, height: 50 });
+                lastHurdleTime = currentTime;
+            }
+
+            // Move hurdles
+            for (let i = hurdles.length - 1; i >= 0; i--) {
+                hurdles[i].y += hurdleSpeed;
+                if (hurdles[i].y > canvas.height) {
+                    hurdles.splice(i, 1);
+                } else if (isCollision(player, hurdles[i])) {
+                    alert("Game Over!");
+                    document.location.reload();
+                }
+            }
+
+            // Update elapsed time
+            elapsedTime = (currentTime - startTime) / 1000;
+        }
+
+        function draw() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw player
+            ctx.drawImage(playerImg, player.x, player.y, player.width, player.height);
+
+            // Draw hurdles
+            hurdles.forEach(hurdle => {
+                ctx.drawImage(hurdleImg, hurdle.x, hurdle.y, hurdle.width, hurdle.height);
+            });
+
+            // Draw elapsed time
+            ctx.font = "30px Comic Sans MS";
+            ctx.fillStyle = "white";
+            ctx.fillText(`Time: ${elapsedTime.toFixed(2)}s`, 10, 30);
+        }
+
+        function isCollision(player, hurdle) {
+            return player.x < hurdle.x + hurdle.width &&
+                   player.x + player.width > hurdle.x &&
+                   player.y < hurdle.y + hurdle.height &&
+                   player.y + player.height > hurdle.y;
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Start the game
+        const startTime = Date.now();
+        gameLoop();
+    </script>
+</body>
+</html>
